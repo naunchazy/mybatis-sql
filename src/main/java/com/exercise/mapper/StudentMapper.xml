@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--映射接口-->
+<mapper namespace="com.exercise.mapper.StudentMapper">
+	<!-- 动态sql的使用：动态Sql,运行时动态拼接成Sql语句 -->
+	<!-- if标签的使用 -->
+	<select id="selectByItem1" resultType="Student" parameterType="Student">
+		select * from student where 1=1
+		<!-- 注意：使用like时，不是采用的预编译方式传入参数，而是直接传入。所以在项目中需要加过滤器，防止sql注入 -->
+		<if test="name!=null and name!=''">
+			and name like '%${name}%'
+		</if>
+		<if test="alias!=null and alias!=''">
+			and alias like '%${alias}%'
+		</if>
+	</select>
+	<!-- where标签的使用 -->
+	<select id="selectByItem2" resultType="Student" parameterType="Student">
+		select * from student
+		<where>
+		<!--where可以去除紧跟着它的一些用不上的特殊语法关键字，eg：and-->
+			<if test="id!=null and id!=''">
+				and id=#{id}
+			</if>
+			<if test="name!=null and name!=''">
+				and name = #{name}
+			</if>
+		</where>
+	</select>
+	<!-- choose when otherwise标签的使用,相当于switch -->
+	<!-- 注意：是按顺序执行的。只要前面有满足的条件就执行前面的，后面的条件即使满足，也只执行一个 -->
+	<select id="selectByItem3" resultType="Student" parameterType="Student">
+		select * from student
+		<where>
+			<choose>
+				<when test="name!=null and name!=''">
+					name=#{name}
+				</when>
+				<when test="alias!=null and alias!=''">
+					alias=#{alias}
+				</when>
+			</choose>
+		</where>
+	</select>
+	<!-- trim标签 -->
+	<!--若后面的sql条件满足的话，则会覆盖紧跟着prefix属性值后面的prefixOverrides属性值
+		若条件不满足的话，前缀也不会出现 -->
+	<select id="selectByItem4" resultType="Student" parameterType="Student">
+		select * from student
+		<!-- 前缀的使用 -->
+		<trim prefix="where" prefixOverrides="and|or">
+			<if test="name!=null and name!=''">
+				and name=#{name}
+			</if>
+			<if test="alias!=null and alias!=''">
+				and alias=#{alias}
+			</if>
+		</trim>
+	</select>
+	<!-- set标签 -->
+	<!-- set可以去除跟在它后面的最后一个满足的条件的"，"号 -->
+	<update id="updateStudent1"  parameterType="Student">
+		update student
+		<set>
+			<if test="name!=null and name!=''">
+				name=#{name},
+			</if>
+			<if test="alias!=null and alias!=''">
+				alias=#{alias},
+			</if>
+			<!-- 若以上两个条件均不满足，若不写该判断，则sql为：update student where id=?不符合语法规则，所以加上这个判断 -->
+			<if test="name!=null or name!='' or alias!=null or alias!=''">
+				id=id,
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+	<!-- trim标签 -->
+	<update id="updateStudent2"  parameterType="Student">
+		update student set
+		<!-- 后缀的使用 -->
+		<trim suffixOverrides=",">
+			<if test="name!=null and name!=''">
+				name=#{name},
+			</if>
+			<if test="alias!=null and alias!=''">
+				alias=#{alias},
+			</if>
+			<!-- 若以上两个条件均不满足，若不写该判断，则sql为：update student set where id=?不符合语法规则，所以加上这个判断 -->
+			<if test="name!=null or name!='' or alias!=null or alias!=''">
+				id=id,
+			</if>
+		</trim>
+		where id=#{id}
+	</update>
+	<!-- foreach标签 -->
+  	<!-- select * from STUDENT where ID in(1,11,12) -->
+  	<!-- ids数组作为查询的参数传入 -->
+	<select id="selectByArray1" parameterType="object[]" resultType="Student">
+		select * from student where id in
+  		<!-- 传入的数组是数组时，collection="array"是固定写法 -->
+		<foreach collection="array" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+	<!-- ids数组作为Student的属性 -->
+	<select id="selectByArray2"  parameterType="Student" resultType="Student">
+		select * from student where id in
+		<foreach collection="ids" item="id" open="(" separator="," close=")">
+			#{id}
+		</foreach>
+	</select>
+</mapper>
